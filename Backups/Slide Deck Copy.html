@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Neon Tech Deck — Rebuilt (No Glitches)</title>
+
+  <style>
+    :root{
+      --bg-dark:#050505;
+      --neon-green:#ccff00;
+      --text-black:#000;
+
+      --card-w:440px;
+      --card-h:300px;
+
+      /* VISUAL SPACING in "open wall" mode:
+         Set this smaller than card width if you WANT overlap visually.
+         This rebuild stays stable even when overlapping. */
+      --gap:260px;
+
+      --open-tilt:10deg;
+    }
+
+    body{
+      background:var(--bg-dark);
+      font-family:'Inter','Helvetica Neue',Arial,sans-serif;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      min-height:100vh;
+      margin:0;
+      overflow:hidden;
+      -webkit-font-smoothing:antialiased;
+      text-rendering:optimizeLegibility;
+    }
+
+    .scene{
+      position:relative;
+      width:100vw;
+      height:600px;
+      perspective:2500px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+
+      /* We handle all interaction on the scene itself */
+      cursor:pointer;
+    }
+
+    /* Dimmer overlay when a card is popped */
+    .backdrop{
+      position:absolute;
+      inset:0;
+      background:rgba(0,0,0,0.55);
+      opacity:0;
+      transition:opacity 180ms ease;
+      pointer-events:none;
+    }
+    .scene.dim .backdrop{ opacity:1; }
+
+    .deck{
+      position:relative;
+      width:100%;
+      height:100%;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      pointer-events:none; /* important: prevent hover battles */
+    }
+
+    .card{
+      position:absolute;
+      width:var(--card-w);
+      height:var(--card-h);
+      transform-style:preserve-3d;
+      will-change:transform;
+      transition:transform 520ms cubic-bezier(0.2,0.8,0.2,1), z-index 0ms;
+      pointer-events:none; /* interaction is scene-driven */
+      user-select:none;
+
+      /* stacked state */
+      transform:
+        rotateY(25deg)
+        translateZ(calc(var(--i) * -50px))
+        translateX(calc(var(--i) * 15px));
+
+      z-index:calc(10 - var(--i));
+    }
+
+    /* Open wall layout (triggered by scene hover OR JS class) */
+    .scene.open .card,
+    .scene:hover .card{
+      z-index:var(--i);
+      transform:
+        rotateY(var(--open-tilt))
+        translateZ(0px)
+        translateX(calc((var(--i) - 2) * var(--gap)));
+    }
+
+    /* Subtle focus lift (chosen card under cursor, even before pop) */
+    .scene.open .card.is-focus,
+    .scene:hover .card.is-focus{
+      z-index:200;
+      transform:
+        rotateY(calc(var(--open-tilt) - 2deg))
+        translateZ(40px)
+        translateX(calc((var(--i) - 2) * var(--gap)));
+    }
+
+    /* Pop state (only when cursor is in middle zone) */
+    .scene.open .card.is-pop,
+    .scene:hover .card.is-pop{
+      z-index:1000 !important;
+      transform:
+        rotateY(0deg)
+        translateZ(260px)
+        translateX(calc((var(--i) - 2) * var(--gap)))
+        scale(1.15);
+    }
+
+    .ghost-frame{
+      position:absolute;
+      top:15px; left:-15px;
+      width:100%; height:100%;
+      border:2px dashed var(--neon-green);
+      background:transparent;
+      transform:translateZ(-2px);
+      opacity:0.95;
+      pointer-events:none;
+      transition:transform 320ms ease, opacity 320ms ease;
+    }
+    .card.is-pop .ghost-frame{
+      transform:translateZ(-50px) translateX(-20px);
+      opacity:1;
+    }
+
+    .face{
+      position:absolute;
+      inset:0;
+      background:var(--neon-green);
+      border:1px solid #fff;
+
+      display:flex;
+      flex-direction:row;
+      padding:30px;
+      box-sizing:border-box;
+
+      background-image:linear-gradient(135deg, rgba(255,255,255,0.4) 0%, transparent 50%);
+      box-shadow:-20px 0 40px rgba(0,0,0,0.8);
+
+      backface-visibility:hidden;
+      transition:box-shadow 240ms ease, background-color 240ms ease;
+    }
+
+    .card.is-pop .face{
+      background-color:#eaff56;
+      box-shadow:0 20px 60px rgba(0,0,0,0.9);
+    }
+
+    /* Typography */
+    .card-left{
+      flex:1;
+      display:flex;
+      flex-direction:column;
+      justify-content:center;
+      border-left:5px solid var(--text-black);
+      padding-left:20px;
+      margin-right:20px;
+    }
+
+    .card-number{
+      font-size:3.5rem;
+      font-weight:900;
+      color:rgba(0,0,0,0.1);
+      line-height:1;
+      margin-bottom:5px;
+    }
+
+    .card-title{
+      font-size:2.2rem;
+      font-weight:800;
+      text-transform:uppercase;
+      color:var(--text-black);
+      line-height:0.9;
+    }
+
+    .card-right{
+      flex:1.2;
+      display:flex;
+      flex-direction:column;
+      justify-content:center;
+      opacity:0;
+      transform:translateX(10px);
+      transition:opacity 220ms ease, transform 220ms ease;
+    }
+
+    /* Title card visible by default */
+    .card[data-i="0"] .card-right{
+      opacity:1;
+      transform:none;
+    }
+
+    /* Reveal details when focused OR popped (so no middle-hover needed for text) */
+    .card.is-focus .card-right,
+    .card.is-pop .card-right{
+      opacity: 1;
+      transform: none;
+    }
+
+
+    .skill-list{ list-style:none; padding:0; margin:0; }
+    .skill-list li{
+      font-size:1rem;
+      font-weight:700;
+      color:var(--text-black);
+      padding:6px 0;
+      border-bottom:1px solid rgba(0,0,0,0.1);
+    }
+
+    .intro-text{ font-weight:700; color:#000; line-height:1.4; }
+    small{ opacity:0.8; }
+  </style>
+</head>
+
+<body>
+  <div class="scene" id="scene">
+    <div class="backdrop"></div>
+
+    <div class="deck" id="deck">
+      <!-- CARD 0 -->
+      <div class="card" data-i="0" style="--i:0">
+        <div class="ghost-frame"></div>
+        <div class="face">
+          <div class="card-left">
+            <div class="card-number">///</div>
+            <div class="card-title">Technical<br>Skills</div>
+          </div>
+          <div class="card-right">
+            <p class="intro-text">
+              My technical toolkit ranging from Data Analytics to AI Engineering.
+              <br><br>
+              <small>→ Hover to Inspect Deck</small>
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- CARD 1 -->
+      <div class="card" data-i="1" style="--i:1">
+        <div class="ghost-frame"></div>
+        <div class="face">
+          <div class="card-left">
+            <div class="card-number">01</div>
+            <div class="card-title">Analytics</div>
+          </div>
+          <div class="card-right">
+            <ul class="skill-list">
+              <li>Python &amp; SQL</li>
+              <li>Power BI</li>
+              <li>Tableau</li>
+              <li>MATLAB</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- CARD 2 -->
+      <div class="card" data-i="2" style="--i:2">
+        <div class="ghost-frame"></div>
+        <div class="face">
+          <div class="card-left">
+            <div class="card-number">02</div>
+            <div class="card-title">AI &amp; Data</div>
+          </div>
+          <div class="card-right">
+            <ul class="skill-list">
+              <li>Vibe Coding</li>
+              <li>Model Training</li>
+              <li>Prompt Eng.</li>
+              <li>Annotation</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- CARD 3 -->
+      <div class="card" data-i="3" style="--i:3">
+        <div class="ghost-frame"></div>
+        <div class="face">
+          <div class="card-left">
+            <div class="card-number">03</div>
+            <div class="card-title">Video</div>
+          </div>
+          <div class="card-right">
+            <ul class="skill-list">
+              <li>HUDL Code</li>
+              <li>Dartfish</li>
+              <li>NacSport</li>
+              <li>Kinovea</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- CARD 4 -->
+      <div class="card" data-i="4" style="--i:4">
+        <div class="ghost-frame"></div>
+        <div class="face">
+          <div class="card-left">
+            <div class="card-number">04</div>
+            <div class="card-title">Core<br>Skills</div>
+          </div>
+          <div class="card-right">
+            <ul class="skill-list">
+              <li>Leadership</li>
+              <li>Problem Solving</li>
+              <li>MS Office Suite</li>
+              <li>Adaptability</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+(() => {
+  const scene = document.getElementById("scene");
+  const cards = Array.from(document.querySelectorAll(".card"));
+  const faces = cards.map(c => c.querySelector(".face"));
+
+  // Visual spacing (must match CSS variable --gap)
+  const GAP = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--gap")) || 260;
+  const CENTER_INDEX = 2; // for 5 cards (0..4)
+
+  // Middle-only activation zone (percentages of card rect)
+  const X_MIN = 0.22, X_MAX = 0.78;
+  const Y_MIN = 0.22, Y_MAX = 0.78;
+
+  let isInside = false;
+
+  function clearStates() {
+    cards.forEach(c => {
+      c.classList.remove("is-focus", "is-pop");
+    });
+    scene.classList.remove("dim");
+  }
+
+  function clamp(n, a, b) { return Math.max(a, Math.min(b, n)); }
+
+  function setFocusPop(focusIdx, popIdx) {
+    cards.forEach((c, i) => {
+      c.classList.toggle("is-focus", i === focusIdx);
+      c.classList.toggle("is-pop", i === popIdx);
+    });
+    scene.classList.toggle("dim", popIdx !== -1);
+  }
+
+  scene.addEventListener("mouseenter", () => {
+    isInside = true;
+    scene.classList.add("open");
+  });
+
+  scene.addEventListener("mouseleave", () => {
+    isInside = false;
+    scene.classList.remove("open");
+    clearStates();
+  });
+
+  scene.addEventListener("mousemove", (e) => {
+    if (!isInside) return;
+
+    const srect = scene.getBoundingClientRect();
+    const x = e.clientX - srect.left;
+    const dx = x - (srect.width / 2);
+
+    // Pick ONE card deterministically from pointer x (no DOM hover = no flicker)
+    const raw = (dx / GAP) + CENTER_INDEX;
+    const idx = clamp(Math.round(raw), 0, cards.length - 1);
+
+    const rect = faces[idx].getBoundingClientRect();
+
+    // Only focus/pop if pointer is actually within that card rect
+    const insideCard =
+      e.clientX >= rect.left && e.clientX <= rect.right &&
+      e.clientY >= rect.top  && e.clientY <= rect.bottom;
+
+    if (!insideCard) {
+      setFocusPop(-1, -1);
+      return;
+    }
+
+    // Middle-only pop logic
+    const px = (e.clientX - rect.left) / rect.width;
+    const py = (e.clientY - rect.top) / rect.height;
+    const inMiddle = (px > X_MIN && px < X_MAX && py > Y_MIN && py < Y_MAX);
+
+    setFocusPop(idx, inMiddle ? idx : -1);
+  }, { passive: true });
+})();
+</script>
+</body>
+</html>

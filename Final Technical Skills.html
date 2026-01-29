@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<!-- saved from url=(0063)file:///Users/karandesai/Desktop/testing/skills-flashcards.html -->
+<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Neon Tech Deck - Final Stable</title>
+    <style>
+        /* 1. SETUP */
+        :root {
+            --bg-dark: #050505;
+            --neon-green: #ccff00; /* Matches Source [1] */
+            --text-black: #000000;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            overflow: hidden; /* Prevents scrollbars */
+            
+            -webkit-font-smoothing: antialiased;
+            text-rendering: optimizeLegibility;
+        }
+
+        /* 2. THE SCENE (Fixed: Infinite Safe Zone) */
+        .scene {
+            position: relative;
+            /* 
+               FIX 1: 100vw ensures the container touches the screen edges.
+               This prevents the "Mouse Exit" glitch on the last card.
+            */
+            width: 100vw; 
+            height: 600px;
+            perspective: 2500px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* 3. THE CARD WRAPPER */
+        .card-wrapper {
+            position: absolute;
+            width: 440px;  /* Landscape */
+            height: 300px; 
+            
+            transform-style: preserve-3d;
+            
+            /* 
+               FIX 2: The 'Magnetic' Transition
+               We add a slight delay to 'transform' so the deck doesn't 
+               snap shut instantly if the mouse slips off Card 4.
+            */
+            transition: transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1), z-index 0s;
+            transition-delay: 0.1s; /* The Safety Buffer */
+            
+            will-change: transform;
+            cursor: pointer;
+            
+            /* REST STATE: Stacked */
+            transform: 
+                rotateY(25deg) 
+                translateZ(calc(var(--i) * -50px)) 
+                translateX(calc(var(--i) * 15px));
+            
+            /* Default Stack: Front on top */
+            z-index: calc(10 - var(--i));
+            
+            /* Ignore mouse on wrapper to prevent invisible overlap */
+            pointer-events: none; 
+        }
+
+        /* 4. THE GHOST FRAME */
+        .ghost-frame {
+            position: absolute;
+            top: 15px; left: -15px;
+            width: 100%; height: 100%;
+            border: 2px dashed var(--neon-green);
+            background: transparent;
+            transform: translateZ(-2px);
+            pointer-events: none;
+        }
+
+        /* 5. THE NEON FACE (Clickable Zone) */
+        .neon-face {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background-color: var(--neon-green);
+            border: 1px solid #fff;
+            
+            display: flex;
+            flex-direction: row;
+            padding: 30px;
+            box-sizing: border-box;
+            
+            /* Visuals matching Source [1] */
+            background-image: linear-gradient(135deg, rgba(255,255,255,0.4) 0%, transparent 50%);
+            box-shadow: -20px 0 40px rgba(0,0,0,0.8);
+            
+            backface-visibility: hidden;
+            
+            /* Only the visual card captures the mouse */
+            pointer-events: auto; 
+        }
+
+        /* 6. TYPOGRAPHY */
+        .card-left {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            border-left: 5px solid var(--text-black);
+            padding-left: 20px;
+            margin-right: 20px;
+        }
+
+        .card-number {
+            font-size: 3.5rem;
+            font-weight: 900;
+            color: rgba(0,0,0,0.1);
+            line-height: 1;
+            margin-bottom: 5px;
+        }
+
+        .card-title {
+            font-size: 2.2rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            color: var(--text-black);
+            line-height: 0.9;
+        }
+
+        .card-right {
+            flex: 1.2;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            opacity: 0; 
+            transform: translateX(10px);
+            transition: all 0.3s ease;
+        }
+        
+        /* Title Card (0) Content Always Visible */
+        .card-wrapper[style*="--i:0"] .card-right {
+            opacity: 1; transform: translateX(0);
+        }
+
+        .skill-list { list-style: none; padding: 0; margin: 0; }
+        .skill-list li {
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--text-black);
+            padding: 6px 0;
+            border-bottom: 1px solid rgba(0,0,0,0.1);
+        }
+
+        .intro-text { font-weight: 700; color: #000; line-height: 1.4; }
+
+        /* ---------------------------------------------------------
+           7. INTERACTION LOGIC (FINAL FIXES)
+           --------------------------------------------------------- */
+
+        /* A. THE WALL (Scene Hover) */
+        .scene:hover .card-wrapper {
+            /* Remove delay on OPEN so it feels responsive */
+            transition-delay: 0s;
+            
+            /* 
+               Stacking Logic Flip:
+               Ensures Card 4 sits visually 'above' Card 3 so no overlap glitches occur.
+            */
+            z-index: var(--i);
+
+            /* 
+               The Wall Position:
+               10deg angle + 240px gap.
+            */
+            transform: 
+                rotateY(10deg) 
+                translateZ(0) 
+                translateX(calc((var(--i) - 2) * 240px)); 
+        }
+
+        /* B. THE POP (Card Hover) */
+        .card-wrapper:hover {
+            transition-delay: 0s; /* Instant reaction */
+            pointer-events: auto; 
+            
+            transform: 
+                rotateY(0deg) 
+                scale(1.15) 
+                translateZ(200px) !important;
+            
+            z-index: 1000 !important; /* Absolute Top Priority */
+            box-shadow: 0 0 0 1000px rgba(0,0,0,0.6); 
+        }
+
+        /* Visual Highlights */
+        .card-wrapper:hover .neon-face {
+            background-color: #eaff56; 
+            box-shadow: 0 20px 60px rgba(0,0,0,0.9);
+        }
+        
+        .card-wrapper:hover .card-right {
+            opacity: 1; transform: translateX(0);
+        }
+
+        .card-wrapper:hover .ghost-frame {
+            transform: translateZ(-50px) translateX(-20px);
+            opacity: 1;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="scene">
+
+        <!-- CARD 0: TITLE -->
+        <div class="card-wrapper" style="--i:0">
+            <div class="ghost-frame"></div>
+            <div class="neon-face">
+                <div class="card-left">
+                    <div class="card-number">///</div>
+                    <div class="card-title">Technical<br>Skills</div>
+                </div>
+                <div class="card-right">
+                    <p class="intro-text">
+                        My technical toolkit ranging from Data Analytics to AI Engineering.
+                        <br><br>
+                        <small>→ Hover to Inspect Deck</small>
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- CARD 1: ANALYTICS -->
+        <div class="card-wrapper" style="--i:1">
+            <div class="ghost-frame"></div>
+            <div class="neon-face">
+                <div class="card-left">
+                    <div class="card-number">01</div>
+                    <div class="card-title">Analytics</div>
+                </div>
+                <div class="card-right">
+                    <ul class="skill-list">
+                        <li>Python &amp; SQL</li>
+                        <li>Power BI</li>
+                        <li>Tableau</li>
+                        <li>MATLAB</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- CARD 2: AI & DATA -->
+        <div class="card-wrapper" style="--i:2">
+            <div class="ghost-frame"></div>
+            <div class="neon-face">
+                <div class="card-left">
+                    <div class="card-number">02</div>
+                    <div class="card-title">AI &amp; Data</div>
+                </div>
+                <div class="card-right">
+                    <ul class="skill-list">
+                        <li>Vibe Coding</li>
+                        <li>Model Training</li>
+                        <li>Prompt Eng.</li>
+                        <li>Annotation</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- CARD 3: VIDEO -->
+        <div class="card-wrapper" style="--i:3">
+            <div class="ghost-frame"></div>
+            <div class="neon-face">
+                <div class="card-left">
+                    <div class="card-number">03</div>
+                    <div class="card-title">Video</div>
+                </div>
+                <div class="card-right">
+                    <ul class="skill-list">
+                        <li>HUDL Code</li>
+                        <li>Dartfish</li>
+                        <li>NacSport</li>
+                        <li>Kinovea</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- CARD 4: CORE SKILLS (Matches Source [1]) -->
+        <div class="card-wrapper" style="--i:4">
+            <div class="ghost-frame"></div>
+            <div class="neon-face">
+                <div class="card-left">
+                    <div class="card-number">04</div>
+                    <div class="card-title">Core<br>Skills</div>
+                </div>
+                <div class="card-right">
+                    <ul class="skill-list">
+                        <li>Leadership</li>
+                        <li>Problem Solving</li>
+                        <li>MS Office Suite</li>
+                        <li>Adaptability</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+
+
+</body></html>
