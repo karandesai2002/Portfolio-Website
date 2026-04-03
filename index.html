@@ -691,6 +691,49 @@
       pointer-events: auto;
     }
     .project-panel:hover::before { background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.4) 50%, transparent 100%); }
+    /* Match dashboard tile: local PNG (neon export); no SVG filter — vignette → --bg; optional lime glow */
+    .project-panel.project-panel--match-dashboard {
+      background-color: var(--bg);
+      isolation: isolate;
+    }
+    .project-panel.project-panel--match-dashboard::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+      background-image: var(--match-dashboard-bg);
+      background-position: center top;
+      background-size: cover;
+      background-repeat: no-repeat;
+      filter: drop-shadow(0 0 20px rgba(204, 255, 0, 0.22));
+      box-shadow:
+        inset 0 0 100px 55px rgba(13, 13, 13, 0.58),
+        inset 0 0 220px 100px rgba(13, 13, 13, 0.22);
+    }
+    .project-panel.project-panel--match-dashboard::before {
+      z-index: 1;
+      background: linear-gradient(to top, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.78) 32%, rgba(0,0,0,0.4) 58%, rgba(0,0,0,0.14) 80%, transparent 100%);
+      pointer-events: none;
+    }
+    .project-panel.project-panel--match-dashboard:hover::before {
+      background: linear-gradient(to top, rgba(0,0,0,0.96) 0%, rgba(0,0,0,0.78) 38%, rgba(0,0,0,0.42) 65%, rgba(0,0,0,0.18) 85%, transparent 100%);
+    }
+    .project-panel.project-panel--match-dashboard .project-panel__label,
+    .project-panel.project-panel--match-dashboard .project-panel__title,
+    .project-panel.project-panel--match-dashboard .project-panel__icon {
+      position: relative;
+      z-index: 2;
+    }
+    .project-panel.project-panel--match-dashboard a {
+      z-index: 3;
+    }
+    @media (min-width: 701px) {
+      .projects-grid .project-panel:nth-child(5) {
+        grid-column: 1 / -1;
+        aspect-ratio: 2.25 / 1;
+      }
+    }
     @media (max-width: 700px) {
       .projects-grid { grid-template-columns: 1fr; }
       .project-panel { aspect-ratio: 4/3; }
@@ -2181,7 +2224,7 @@
       </div>
       <div class="section-content" style="max-width: 900px; margin: 2.5rem auto 0; font-size: 0.95rem; color: var(--text); font-weight: 600;">
         <p>
-          I am proficient in Python, machine learning models, SQL, and database design, demonstrated through projects such as an ODI Win Predictor, a Football Analysis Tracking System (in progress), a Digital Learning Products Store Database, and analytical blogs published on Medium. My development workflow is powered heavily by Cursor AI (ChatGPT for coders), which I’ve used extensively for end-to-end coding, rapid iteration, testing, ML model training and evaluation, and data visualization—significantly accelerating execution and experimentation.
+          I am proficient in Python, machine learning models, SQL, and database design, demonstrated through projects such as an ODI Win Predictor, a Football Analysis Tracking System, a match analytics dashboard (tagged match video → structured metrics → visuals), a Digital Learning Products Store Database, and analytical blogs published on Medium. My development workflow is powered heavily by Cursor AI (ChatGPT for coders), which I’ve used extensively for end-to-end coding, rapid iteration, testing, ML model training and evaluation, and data visualization—significantly accelerating execution and experimentation.
         </p>
         <p>
           I’ve also leveraged NotebookLM to design graphical elements, mind maps, and interactive visuals, and n8n to automate repetitive, multi-step processes. Professionally, I’ve worked with Mercor, Alignerr, and Mindrift, contributing to the training, testing, and evaluation of large language models including ChatGPT, Gemini, Claude, and Google AIM. This included evaluating football-related analytical responses across the Premier League and La Liga using metrics such as helpfulness, severity, pattern loss, and factual accuracy.
@@ -2239,6 +2282,12 @@
           <h3 class="project-panel__title">Digital Learning Store DB</h3>
           <div class="project-panel__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path><path d="M8 7h8M8 11h8"></path></svg></div>
           <a href="https://github.com/karandesai2002/Digital-Learning-Products-Store" target="_blank" rel="noopener" aria-label="Digital Learning Store on GitHub"></a>
+        </div>
+        <div class="project-panel project-panel--match-dashboard" style="--match-dashboard-bg: url('assets/match-dashboard-tile.png')">
+          <span class="project-panel__label">Pro · ject</span>
+          <h3 class="project-panel__title">Match analytics dashboard</h3>
+          <div class="project-panel__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="14" height="12" rx="2"></rect><path d="M16 10l6-3v10l-6-3z"></path></svg></div>
+          <a href="https://github.com/karandesai2002/Football-Match-Analytics-Dashboard" target="_blank" rel="noopener noreferrer" aria-label="Match analytics dashboard — open GitHub repo (video tagging, data, visuals)"><span class="visually-hidden">Open match analytics dashboard project on GitHub</span></a>
         </div>
       </div>
       </div>
